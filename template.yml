@@ -1,0 +1,41 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: RainAlert Lambda
+
+Globals:
+  Function:
+    Timeout: 10
+    Runtime: provided.al2
+    Handler: bootstrap
+    MemorySize: 128
+    Tracing: Active
+    Environment:
+      Variables:
+        CONFIG_PATH: "/var/task/config.json"
+
+Resources:
+  LeetSignalLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: leetsignal-lambda
+      CodeUri: cmd/lambda/
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+                - ssm:PutParameter
+              Resource: 
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/leetcode/*"
+      Events:
+        HourlySchedule:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 minute)
+  LeetSignalLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/leetsignal-lambda
+      RetentionInDays: 1
