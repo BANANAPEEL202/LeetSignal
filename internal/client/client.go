@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-const baseURL = "https://alfa-leetcode-api.onrender.com"
+const baseURL = "https://leetcode-api-pied.vercel.app"
 
 type Client struct {
 	httpClient *http.Client
@@ -40,8 +40,22 @@ type Submission struct {
 	ID            string `json:"id"`
 }
 
+type TotalSubmission struct {
+	Difficulty  string `json:"difficulty"`
+	Count       int    `json:"count"`
+	Submissions int    `json:"submissions"`
+}
+
+type SubmitStats struct {
+	TotalSubmissionNum []TotalSubmission `json:"acSubmissionNum"`
+}
+
+type UserStats struct {
+	SubmitStats SubmitStats `json:"submitStats"`
+}
+
 func (c *Client) GetNumSolved(username string) (int, error) {
-	url := fmt.Sprintf("%s/%s/solved", baseURL, username)
+	url := fmt.Sprintf("%s/user/%s", baseURL, username)
 
 	resp, err := c.httpClient.Get(url)
 	if err != nil {
@@ -53,17 +67,24 @@ func (c *Client) GetNumSolved(username string) (int, error) {
 		return 0, fmt.Errorf("API returned status %d", resp.StatusCode)
 	}
 
-	var result solvedResponse
+	var result UserStats
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return 0, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	return result.SolvedProblem, nil
+	// Find the "All" entry
+	for _, t := range result.SubmitStats.TotalSubmissionNum {
+		if t.Difficulty == "All" {
+			return t.Count, nil
+		}
+	}
+
+	return 0, fmt.Errorf("total submissions not found")
 }
 
 func (c *Client) GetMostRecentAcceptedSubmission(username string) (*Submission, error) {
 	// 1. Fetch most recent accepted submission
-	submissionURL := fmt.Sprintf("%s/%s/acSubmission?limit=1", baseURL, username)
+	submissionURL := fmt.Sprintf("%s/user/%s/submissions", baseURL, username)
 	resp, err := c.httpClient.Get(submissionURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch most recent submission: %w", err)
@@ -74,34 +95,37 @@ func (c *Client) GetMostRecentAcceptedSubmission(username string) (*Submission, 
 		return nil, fmt.Errorf("API returned status %d", resp.StatusCode)
 	}
 
-	var acResp struct {
-		Count      int          `json:"count"`
-		Submission []Submission `json:"submission"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&acResp); err != nil {
+	var submissions []Submission
+	if err := json.NewDecoder(resp.Body).Decode(&submissions); err != nil {
 		return nil, fmt.Errorf("failed to decode submission response: %w", err)
 	}
 
-	if len(acResp.Submission) == 0 {
+	if len(submissions) == 0 {
 		return nil, nil // no accepted submissions
 	}
 
-	sub := &acResp.Submission[0]
+	accepted_sub := &Submission{}
+	for _, sub := range submissions {
+		if sub.StatusDisplay == "Accepted" {
+			accepted_sub = &sub
+			break
+		}
+	}
 
-	if sub.TitleSlug == "" {
-		return sub, nil
+	if accepted_sub.TitleSlug == "" {
+		return accepted_sub, nil
 	}
 
 	// 2. Fetch difficulty using titleSlug
-	selectURL := fmt.Sprintf("%s/select?titleSlug=%s", baseURL, sub.TitleSlug)
+	selectURL := fmt.Sprintf("%s/problem/%s", baseURL, accepted_sub.TitleSlug)
 	detailResp, err := c.httpClient.Get(selectURL)
 	if err != nil {
-		return sub, fmt.Errorf("failed to fetch question details: %w", err)
+		return accepted_sub, fmt.Errorf("failed to fetch question details: %w", err)
 	}
 	defer detailResp.Body.Close()
 
 	if detailResp.StatusCode != http.StatusOK {
-		return sub, fmt.Errorf("select API returned status %d", detailResp.StatusCode)
+		return accepted_sub, fmt.Errorf("select API returned status %d", detailResp.StatusCode)
 	}
 
 	var detail struct {
@@ -109,10 +133,10 @@ func (c *Client) GetMostRecentAcceptedSubmission(username string) (*Submission, 
 		ID         string `json:"questionId"`
 	}
 	if err := json.NewDecoder(detailResp.Body).Decode(&detail); err != nil {
-		return sub, fmt.Errorf("failed to decode question detail: %w", err)
+		return accepted_sub, fmt.Errorf("failed to decode question detail: %w", err)
 	}
 
-	sub.Difficulty = detail.Difficulty
-	sub.ID = detail.ID
-	return sub, nil
+	accepted_sub.Difficulty = detail.Difficulty
+	accepted_sub.ID = detail.ID
+	return accepted_sub, nil
 }

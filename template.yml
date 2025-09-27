@@ -33,7 +33,7 @@ Resources:
         HourlySchedule:
           Type: Schedule
           Properties:
-            Schedule: rate(1 minute)
+            Schedule: rate(2 minutes)
   LeetSignalLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:

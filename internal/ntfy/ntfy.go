@@ -9,8 +9,8 @@ import (
 )
 
 func SendLeetSignal(cfg config.Config, profile string, submission client.Submission) error {
-	msg := fmt.Sprintf("%s just solved %s (%s)! 🎉", profile, submission.Title, submission.Difficulty)
-	return SendNtfy(cfg, "All Clear ☀️", "3", msg)
+	msg := fmt.Sprintf("%s just solved %s. %s (LC %s)!", profile, submission.ID, submission.Title, submission.Difficulty)
+	return SendNtfy(cfg, "Leetcode Solved 🎉", "1", msg)
 }
 
 func SendErrorAlert(cfg config.Config, errMsg string) error {
