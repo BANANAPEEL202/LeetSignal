@@ -21,10 +21,6 @@ func NewClient() *Client {
 	}
 }
 
-type solvedResponse struct {
-	SolvedProblem int `json:"solvedProblem"`
-}
-
 type ACSubmissionResponse struct {
 	Count      int          `json:"count"`
 	Submission []Submission `json:"submission"`

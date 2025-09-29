@@ -1,0 +1,4 @@
+{
+  "profiles": ["leetcode-id-1", "leetcode-id-2"],
+  "ntfy_topic": "your-ntfy-topic"
+}
