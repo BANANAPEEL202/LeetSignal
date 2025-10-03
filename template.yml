@@ -13,6 +13,12 @@ Globals:
       Variables:
         CONFIG_PATH: "/var/task/config.json"
 
+Parameters:
+  LambdaScheduleEnabled:
+    Type: String
+    Default: true
+    AllowedValues: [true, false]
+
 Resources:
   LeetSignalLambda:
     Type: AWS::Serverless::Function
@@ -34,6 +40,7 @@ Resources:
           Type: Schedule
           Properties:
             Schedule: rate(2 minutes)
+            Enabled: !Ref LambdaScheduleEnabled
   LeetSignalLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
