@@ -8,7 +8,6 @@ Globals:
     Runtime: provided.al2
     Handler: bootstrap
     MemorySize: 128
-    Tracing: Active
     Environment:
       Variables:
         CONFIG_PATH: "/var/task/config.json"
