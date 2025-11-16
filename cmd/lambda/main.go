@@ -68,7 +68,7 @@ func Handler(ctx context.Context) (string, error) {
 			submission, err := client.GetMostRecentAcceptedSubmission(profile)
 			if err != nil {
 				log.Printf("Error fetching latest submission for %s: %v", profile, err)
-				ntfy.SendErrorAlert(cfg, fmt.Sprintf("Error fetching latest submission for %s: %v", profile, err))
+				//ntfy.SendErrorAlert(cfg, fmt.Sprintf("Error fetching latest submission for %s: %v", profile, err))
 				continue
 			}
 			ntfy.SendLeetSignal(cfg, profile, *submission)
